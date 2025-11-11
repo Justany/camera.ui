@@ -11,8 +11,8 @@ COPY package*.json ./
 COPY ui/package*.json ./ui/
 
 # Installer les dépendances avec cache optimisé
-RUN npm ci --only=production && \
-  npm ci --prefix ui --only=production
+RUN npm install --omit=dev && \
+    npm install --prefix ui --omit=dev
 
 # Copier le code source
 COPY . .
