@@ -43,16 +43,14 @@ RUN apk add --no-cache \
 # Définir le répertoire de travail
 WORKDIR /app
 
-# Copier seulement les dépendances de production depuis le builder
-COPY --from=builder /app/package*.json ./
-
-# Réinstaller seulement les dépendances de production
-RUN npm install --omit=dev
+# Copier les node_modules depuis le builder (déjà installés)
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copier l'interface buildée
 COPY --from=builder /app/interface ./interface
 
 # Copier le code source de l'application
+COPY package*.json ./
 COPY bin ./bin
 COPY src ./src
 
