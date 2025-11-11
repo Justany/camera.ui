@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ===================================
   # Service principal camera.ui
@@ -110,7 +108,7 @@ services:
   # MQTT Broker (optionnel pour motion detection)
   # ===================================
   mqtt-broker:
-    image: eclipse-mosquitto:2-alpine
+    image: eclipse-mosquitto:latest
     container_name: mvutu-mqtt
     restart: unless-stopped
     
