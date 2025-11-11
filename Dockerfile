@@ -32,33 +32,28 @@ LABEL version="1.1.17"
 
 # Installer FFmpeg et les dépendances système
 RUN apk add --no-cache \
-  ffmpeg \
-  python3 \
-  make \
-  g++ \
-  curl \
-  tzdata \
-  && rm -rf /var/cache/apk/*
-
-# Créer un utilisateur non-root pour la sécurité
-RUN addgroup -g 1000 cameraui && \
-  adduser -D -u 1000 -G cameraui cameraui
+    ffmpeg \
+    python3 \
+    make \
+    g++ \
+    curl \
+    tzdata \
+    && rm -rf /var/cache/apk/*
 
 # Définir le répertoire de travail
 WORKDIR /app
 
 # Copier les dépendances depuis le builder
-COPY --from=builder --chown=cameraui:cameraui /app/node_modules ./node_modules
-COPY --from=builder --chown=cameraui:cameraui /app/interface ./interface
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/interface ./interface
 
 # Copier le code source de l'application
-COPY --chown=cameraui:cameraui package*.json ./
-COPY --chown=cameraui:cameraui bin ./bin
-COPY --chown=cameraui:cameraui src ./src
+COPY package*.json ./
+COPY bin ./bin
+COPY src ./src
 
-# Créer les répertoires nécessaires avec les bonnes permissions
-RUN mkdir -p /app/data && \
-  chown -R cameraui:cameraui /app/data
+# Créer les répertoires nécessaires
+RUN mkdir -p /app/data
 
 # Variables d'environnement par défaut
 ENV NODE_ENV=production \
@@ -72,9 +67,6 @@ EXPOSE 8081
 
 # Volume pour la persistance des données
 VOLUME ["/app/data"]
-
-# Changer vers l'utilisateur non-root
-USER cameraui
 
 # Healthcheck pour vérifier l'état de l'application
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
