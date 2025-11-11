@@ -1,0 +1,6 @@
+onlyBuiltDependencies:
+  - '@scarf/scarf'
+  - dtrace-provider
+  - ffmpeg-for-homebridge
+  - osx-temperature-sensor
+  - pixel-change

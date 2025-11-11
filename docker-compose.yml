@@ -1,0 +1,212 @@
+version: '3.8'
+
+services:
+  # ===================================
+  # Service principal camera.ui
+  # ===================================
+  camera-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mvutu-camera-ui
+    image: mvutu-security/camera-ui:latest
+    restart: unless-stopped
+    
+    ports:
+      - "8081:8081"
+    
+    volumes:
+      # Données persistantes (base de données, enregistrements, configuration)
+      - camera-ui-data:/app/data
+      # Optionnel: Montage direct pour les enregistrements (haute performance)
+      - ./recordings:/app/data/recordings
+      # Optionnel: Configuration personnalisée
+      # - ./config.json:/app/data/config.json
+    
+    environment:
+      - NODE_ENV=production
+      - CUI_SERVICE_MODE=1
+      - CUI_STORAGE_PATH=/app/data
+      - DISABLE_OPENCOLLECTIVE=true
+      - TZ=Africa/Kinshasa
+      # Pour les notifications Telegram (optionnel)
+      # - TELEGRAM_BOT_TOKEN=your_bot_token
+      # Pour AWS Rekognition (optionnel)
+      # - AWS_ACCESS_KEY_ID=your_access_key
+      # - AWS_SECRET_ACCESS_KEY=your_secret_key
+      # - AWS_REGION=us-east-1
+    
+    networks:
+      - camera-network
+      - frontend
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    # Limites de ressources pour la stabilité
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ===================================
+  # Nginx Reverse Proxy avec Firewall
+  # ===================================
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: mvutu-nginx-proxy
+    restart: unless-stopped
+    
+    ports:
+      - "80:80"
+      - "443:443"
+    
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-cache:/var/cache/nginx
+      - nginx-logs:/var/log/nginx
+    
+    depends_on:
+      - camera-ui
+    
+    networks:
+      - frontend
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ===================================
+  # MQTT Broker (optionnel pour motion detection)
+  # ===================================
+  mqtt-broker:
+    image: eclipse-mosquitto:2-alpine
+    container_name: mvutu-mqtt
+    restart: unless-stopped
+    
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    
+    volumes:
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt-data:/mosquitto/data
+      - mqtt-logs:/mosquitto/log
+    
+    networks:
+      - camera-network
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===================================
+  # Fail2ban pour la protection (optionnel)
+  # ===================================
+  fail2ban:
+    image: crazymax/fail2ban:latest
+    container_name: mvutu-fail2ban
+    restart: unless-stopped
+    
+    network_mode: "host"
+    
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    
+    volumes:
+      - ./fail2ban:/data
+      - nginx-logs:/var/log/nginx:ro
+    
+    environment:
+      - TZ=Africa/Kinshasa
+      - F2B_LOG_LEVEL=INFO
+      - F2B_DB_PURGE_AGE=1d
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+# ===================================
+# Réseaux Docker
+# ===================================
+networks:
+  # Réseau pour la communication entre caméras et l'application
+  camera-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  
+  # Réseau frontend pour nginx et l'application
+  frontend:
+    driver: bridge
+    internal: false
+
+# ===================================
+# Volumes Docker
+# ===================================
+volumes:
+  # Données de l'application camera.ui
+  camera-ui-data:
+    driver: local
+  
+  # Cache Nginx
+  nginx-cache:
+    driver: local
+  
+  # Logs Nginx
+  nginx-logs:
+    driver: local
+  
+  # Données MQTT
+  mqtt-data:
+    driver: local
+  
+  # Logs MQTT
+  mqtt-logs:
+    driver: local
+

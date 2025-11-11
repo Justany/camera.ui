@@ -1,0 +1,82 @@
+# ===================================
+# .dockerignore - Optimisation du build Docker
+# ===================================
+
+# Dépendances
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Fichiers de développement
+.git/
+.gitignore
+.gitattributes
+.editorconfig
+.eslintrc*
+.prettierrc*
+nodemon.json
+
+# Tests
+test/
+*.test.js
+*.spec.js
+coverage/
+.nyc_output/
+
+# Documentation
+*.md
+!README.md
+docs/
+images/
+CHANGELOG.md
+CONTRIBUTING.md
+FLUTTER_INTEGRATION.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Données locales
+.camera.ui/
+data/
+recordings/
+
+# Configuration locale
+config.json
+.env
+.env.local
+.env.*.local
+
+# Build temporaires
+dist/
+build/
+tmp/
+temp/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
+.cache/
+
