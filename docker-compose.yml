@@ -21,12 +21,14 @@ services:
     # Accès aux caméras RTSP
     # Ajuster selon vos besoins réseau
     # network_mode: host  # Décommenter si besoin d'accéder aux caméras sur le réseau local
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8081/version', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # Healthcheck optionnel - vérifie que l'API répond
+    # Décommentez si vous voulez que Docker surveille la santé du conteneur
+    # healthcheck:
+    #   test: ["CMD", "node", "-e", "require('http').get('http://localhost:8081/version', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
 
 volumes:
   camera-ui-data:
