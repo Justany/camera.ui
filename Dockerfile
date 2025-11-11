@@ -9,12 +9,14 @@ RUN npm config set fetch-retry-mintimeout 20000 && \
   npm config set fetch-retry-maxtimeout 120000 && \
   npm config set fetch-retries 5
 
-# Copier uniquement les fichiers de dépendances UI
+# Copier les fichiers de dépendances (root + UI)
+COPY package*.json ./
 COPY ui/package*.json ./ui/
 
 # Installer les dépendances UI (avec devDependencies pour le build)
 WORKDIR /app/ui
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps && \
+  npm install compare-versions@^4.1.3 --legacy-peer-deps
 
 # Copier le code source UI
 COPY ui/ ./
